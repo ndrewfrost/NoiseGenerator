@@ -1,5 +1,9 @@
 // Andrew Frost
 
+#include <vector>
+#include <numeric>
+#include <random>
+
 ///////////////////////////////////////////////////////////////////////////
 // Perlin Noise                                                          //
 ///////////////////////////////////////////////////////////////////////////
@@ -30,6 +34,18 @@ public:
         for (int i = 0; i < 256; i++) {
             p[256 + i] = p[i] = permutation[i];
         }
+    }
+
+    Perlin(unsigned int seed) 
+    {
+        p.resize(256);
+        // insert values from 0 to 255
+        std::iota(p.begin(), p.end(), 0);
+        // random engine from seed
+        std::default_random_engine engine(seed);
+        // random shuffle permutation
+        std::shuffle(p.begin(), p.end(), engine);
+        p.insert(p.end(), p.begin(), p.end());
     }
 
     ~Perlin() = default;
@@ -96,6 +112,6 @@ private:
         return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
     }
 
-    int p[512];
+    std::vector<int> p;
 
 };
