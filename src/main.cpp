@@ -9,8 +9,12 @@
 
 #include <iostream>
 
-static int g_winWidth  = 400;
-static int g_winHeight = 400;
+#include "perlin.h"
+
+const static int   g_winWidth  = 400;
+const static int   g_winHeight = 400;
+const static int   perlinSize  = 64;
+const static float scale       = 0.2f;
 
 // Very wasteful, but easy to read
 static const char* vertexShaderText =
@@ -100,10 +104,10 @@ int main(int argc, char** argv)
 
     GLuint texture, program, vertexBuffer;
     GLint mvpLocation, vposLocation, colorLocation, textureLocation;
-
+    Perlin perlin;
     // create OpenGL objects
     {
-        char pixels[20 * 20];
+        char pixels[perlinSize * perlinSize];
         GLuint vertexShader, fragShader;
 
         glGenTextures(1, &texture);
@@ -111,13 +115,18 @@ int main(int argc, char** argv)
 
         srand((unsigned int)glfwGetTimerValue());
 
-        for (int y = 0; y < 20; y++) {
-            for (int x = 0; x < 20; x++) {
-                pixels[y * 20 + x] = rand() % 256;
+        float p;
+        for (int y = 0; y < perlinSize; y++) {
+            for (int x = 0; x < perlinSize; x++) {
+                // Perlin Noise
+                p = perlin.noise(x * scale, y * scale, 0.0f);
+                p = (p + 1.f) / 2.f;
+                pixels[y * perlinSize + x] = (char)(p * 255) ;
+                //pixels[y * perlinSize + x] = rand() % 256;
             }
         }
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 20, 20, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, perlinSize, perlinSize, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, pixels);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -158,7 +167,7 @@ int main(int argc, char** argv)
     // GUI Loop
     while (!glfwWindowShouldClose(window)) {
         
-        const glm::vec3 color = glm::vec3(0.2f, 0.4f, 1.f);
+        const glm::vec3 color = glm::vec3(1.f, 1.f, 1.f);
 
         int width, height;
         glm::mat4 mvp;
