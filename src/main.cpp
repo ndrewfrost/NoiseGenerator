@@ -121,8 +121,7 @@ int main(int argc, char** argv)
                 // Perlin Noise
                 p = perlin.noise(x * scale, y * scale, 0.0f);
                 p = (p + 1.f) / 2.f;
-                pixels[y * perlinSize + x] = (char)(p * 255) ;
-                //pixels[y * perlinSize + x] = rand() % 256;
+                pixels[y * perlinSize + x] = (char)(p * 255);
             }
         }
 
