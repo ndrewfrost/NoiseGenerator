@@ -2,4 +2,4 @@
 
 A perlin noise generator implementation from [perlin_noise](https://cs.nyu.edu/~perlin/noise/)
 
-![Example Image](images/Capture.JPG)
+![Example Image](images/output.JPG)
