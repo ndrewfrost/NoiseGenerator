@@ -104,7 +104,7 @@ int main(int argc, char** argv)
 
     GLuint texture, program, vertexBuffer;
     GLint mvpLocation, vposLocation, colorLocation, textureLocation;
-    Perlin perlin = Perlin(232u);
+    Perlin perlin = Perlin();
     // create OpenGL objects
     {
         char pixels[perlinSize * perlinSize];
