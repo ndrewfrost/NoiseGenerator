@@ -32,10 +32,11 @@ static const char* fragShaderText =
 "#version 110                                                            \n"
 "uniform sampler2D texture;                                              \n"
 "uniform vec3 color;                                                     \n"
+"uniform float time;                                                     \n"
 "varying vec2 texcoord;                                                  \n"
 "void main()                                                             \n"
 "{                                                                       \n"
-"    gl_FragColor = vec4(color * texture2D(texture, texcoord).rgb, 1.0); \n"
+"    gl_FragColor = vec4(color * texture2D(texture, vec2(texcoord.x + time, texcoord.y + time)).rgb, 1.0); \n"
 "}                                                                       \n";
 
 static const glm::vec2 vertices[4] =
@@ -104,6 +105,10 @@ int main(int argc, char** argv)
 
     GLuint texture, program, vertexBuffer;
     GLint mvpLocation, vposLocation, colorLocation, textureLocation;
+    GLint textureOffset;
+
+    unsigned int timer = 0;
+
     Perlin perlin = Perlin();
     // create OpenGL objects
     {
@@ -128,6 +133,8 @@ int main(int argc, char** argv)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, perlinSize, perlinSize, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, pixels);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         vertexShader = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertexShader, 1, &vertexShaderText, NULL);
@@ -146,6 +153,7 @@ int main(int argc, char** argv)
         colorLocation = glGetUniformLocation(program, "color");
         textureLocation = glGetUniformLocation(program, "texture");
         vposLocation = glGetAttribLocation(program, "vPos");
+        textureOffset = glGetUniformLocation(program, "time");
 
         glGenBuffers(1, &vertexBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -154,6 +162,7 @@ int main(int argc, char** argv)
 
     glUseProgram(program);
     glUniform1i(textureLocation, 0);
+    glUniform1f(textureOffset, 0);
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -165,7 +174,11 @@ int main(int argc, char** argv)
 
     // GUI Loop
     while (!glfwWindowShouldClose(window)) {
-        
+
+        glfwPollEvents();
+
+        timer = (timer + 1) % (perlinSize*2);
+        float offset = (float)timer / (perlinSize*2);
         const glm::vec3 color = glm::vec3(1.f, 1.f, 1.f);
 
         int width, height;
@@ -173,6 +186,8 @@ int main(int argc, char** argv)
 
         glfwGetFramebufferSize(window, &width, &height);
         glfwMakeContextCurrent(window);
+
+        glUniform1f(textureOffset, offset);
 
         glViewport(0, 0, width, height);
 
@@ -182,8 +197,6 @@ int main(int argc, char** argv)
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
         glfwSwapBuffers(window);
-
-        glfwWaitEvents();
     }
 
     glfwTerminate();
