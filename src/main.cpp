@@ -13,7 +13,7 @@
 
 const static int   g_winWidth  = 400;
 const static int   g_winHeight = 400;
-const static int   perlinSize  = 64;
+const static int   perlinSize  = 80;
 const static float scale       = 0.2f;
 
 // Very wasteful, but easy to read
@@ -109,7 +109,7 @@ int main(int argc, char** argv)
 
     unsigned int timer = 0;
 
-    Perlin perlin = Perlin();
+    Perlin perlin = Perlin(perlinSize * scale, 12u);
     // create OpenGL objects
     {
         char pixels[perlinSize * perlinSize];
@@ -124,8 +124,7 @@ int main(int argc, char** argv)
         for (int y = 0; y < perlinSize; y++) {
             for (int x = 0; x < perlinSize; x++) {
                 // Perlin Noise
-                p = perlin.noise(x * scale, y * scale, 0.0f);
-                p = (p + 1.f) / 2.f;
+                p = perlin.noise(x * scale, y * scale, 0.f);
                 pixels[y * perlinSize + x] = (char)(p * 255);
             }
         }
@@ -177,8 +176,8 @@ int main(int argc, char** argv)
 
         glfwPollEvents();
 
-        timer = (timer + 1) % (perlinSize*2);
-        float offset = (float)timer / (perlinSize*2);
+        timer = (timer + 1) % (perlinSize*3);
+        float offset = (float)(timer) / (perlinSize*3);
         const glm::vec3 color = glm::vec3(1.f, 1.f, 1.f);
 
         int width, height;

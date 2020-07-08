@@ -11,7 +11,10 @@
 class Perlin
 {
 public:
-    Perlin() {
+    //---------------------------------------------------------------------
+    //
+    //
+    Perlin(const float s) : size(s) {
         p.resize(512);
 
         int permutation[] = { 151, 160, 137, 91, 90, 15, 131, 13, 201,
@@ -38,7 +41,10 @@ public:
         }
     }
 
-    Perlin(unsigned int seed) 
+    //---------------------------------------------------------------------
+    //
+    //
+    Perlin(const float s, unsigned int seed) : size(s)
     {
         p.resize(256);
         // insert values from 0 to 255
@@ -52,45 +58,85 @@ public:
 
     ~Perlin() = default;
 
-    float noise(const float& posx, const float& posy, const float& posz)
+    //---------------------------------------------------------------------
+    //
+    //
+    float octave(float posx, float posy, float posz, int octaves, float persistence)
     {
-        float x = posx - floor(posx);
-        float y = posy - floor(posy);
-        float z = posz - floor(posz);
+        float total = 0;
+        float frequency = 1;
+        float amplitude = 1;
+        for (int i = 0; i < octaves; i++) {
+            total += noise(posx * frequency, posy * frequency, posz * frequency)
+                * amplitude;
 
-        int X = (int)floor(posx) & 255;
-        int Y = (int)floor(posy) & 255;
-        int Z = (int)floor(posz) & 255;
+            amplitude *= persistence;
+            frequency *= 2;
+        }
 
-        float u = fade(x);
-        float v = fade(y);
-        float w = fade(z);
+        return total;
+    }
 
-        int A  = p[X] + Y;
-        int AA = p[A] + Z;
-        int AB = p[A + 1] + Z;
-        int B  = p[X + 1] + Y;
-        int BA = p[B] + Z;
-        int BB = p[B + 1] + Z;
+    //---------------------------------------------------------------------
+    //
+    //
+    float noise(float posx, float posy, float posz)
+    {
+        float xf = posx - floor(posx);
+        float yf = posy - floor(posy);
+        float zf = posz - floor(posz);
 
-        float r = lerp(
-            w,
-            lerp(v,
-                lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)),
-                lerp(u, grad(p[AB], x, y - 1, z),
-                    grad(p[BB], x - 1, y - 1, z))),
-            lerp(v,
-                lerp(u, grad(p[AA + 1], x, y, z - 1),
-                    grad(p[BA + 1], x - 1, y, z - 1)),
-                lerp(u, grad(p[AB + 1], x, y - 1, z - 1),
-                    grad(p[BB + 1], x - 1, y - 1, z - 1))));
+        int xi = (int)floor(posx) & 255;
+        int yi = (int)floor(posy) & 255;
+        int zi = (int)floor(posz) & 255;
 
-        return r;
+        float u = fade(xf);
+        float v = fade(yf);
+        float w = fade(zf);
+
+        int aaa, aba, aab, abb, baa, bba, bab, bbb;
+        aaa = p[p[p[xi] + yi] + zi];
+        aba = p[p[p[xi] + inc(yi)] + zi];
+        aab = p[p[p[xi] + yi] + inc(zi)];
+        abb = p[p[p[xi] + inc(yi)] + inc(zi)];
+        baa = p[p[p[inc(xi)] + yi] + zi];
+        bba = p[p[p[inc(xi)] + inc(yi)] + zi];
+        bab = p[p[p[inc(xi)] + yi] + inc(zi)];
+        bbb = p[p[p[inc(xi)] + inc(yi)] + inc(zi)];
+
+        float x1, x2, y1, y2;
+        x1 = lerp(grad(aaa, xf, yf, zf),
+                  grad(baa, xf - 1, yf, zf),
+                  u);  
+        x2 = lerp(grad(aba, xf, yf - 1, zf),
+                  grad(bba, xf - 1, yf - 1, zf),
+                  u);
+        y1 = lerp(x1, x2, v);
+
+        x1 = lerp(grad(aab, xf, yf, zf - 1),
+                  grad(bab, xf - 1, yf, zf - 1),
+                  u);
+        x2 = lerp(grad(abb, xf, yf - 1, zf - 1),
+                  grad(bbb, xf - 1, yf - 1, zf - 1),
+                  u);
+        y2 = lerp(x1, x2, v);
+
+        return (lerp(y1, y2, w) + 1) / 2;
     }
 
 private:
     //---------------------------------------------------------------------
-    // Fade curves
+    //
+    //
+    int inc(int num) {
+        num++;
+        num %= (int)size;
+
+        return num;
+    }
+
+    //---------------------------------------------------------------------
+    // Eases coordinate values, smoothing final output
     //
     float fade(float t)
     {
@@ -98,22 +144,49 @@ private:
     }
 
     //---------------------------------------------------------------------
-    // Linearly interpolate between a0 and a1 with weight value w
+    // Linear interpolate
     //
-    float lerp(float t, float a, float b) {
+    float lerp(float a, float b, float t)
+    {
         return a + t * (b - a);
     }
 
     //---------------------------------------------------------------------
     // Dot project of distance and gradiend
+    // Source: http://riven8192.blogspot.com/2010/08/calculate-perlinnoise-twice-as-fast.html
     //
-    float grad(int hash, float x, float y, float z) {
+    float grad(int hash, float x, float y, float z)
+    {
+        switch (hash & 0xF)
+        {
+        case 0x0: return  x + y;
+        case 0x1: return -x + y;
+        case 0x2: return  x - y;
+        case 0x3: return -x - y;
+        case 0x4: return  x + z;
+        case 0x5: return -x + z;
+        case 0x6: return  x - z;
+        case 0x7: return -x - z;
+        case 0x8: return  y + z;
+        case 0x9: return -y + z;
+        case 0xA: return  y - z;
+        case 0xB: return -y - z;
+        case 0xC: return  y + x;
+        case 0xD: return -y + z;
+        case 0xE: return  y - x;
+        case 0xF: return -y - z;
+        default: return 0; // never happens
+        }
+
+        /*
         int h = hash & 15;
         float u = h < 8 ? x : y;
         float v = h < 4 ? y : h == 12 || h == 14 ? x : z;
         return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+        */
     }
 
     std::vector<int> p;
+    const float size;
 
 };
