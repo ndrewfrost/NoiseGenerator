@@ -124,7 +124,7 @@ int main(int argc, char** argv)
         for (int y = 0; y < perlinSize; y++) {
             for (int x = 0; x < perlinSize; x++) {
                 // Perlin Noise
-                p = perlin.noise(x * scale, y * scale, 0.f);
+                p = perlin.octave(x * scale, y * scale, 0.f, 2, 0.2f);
                 pixels[y * perlinSize + x] = (char)(p * 255);
             }
         }

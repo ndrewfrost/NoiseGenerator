@@ -66,15 +66,18 @@ public:
         float total = 0;
         float frequency = 1;
         float amplitude = 1;
+        float maxValue  = 0;
         for (int i = 0; i < octaves; i++) {
             total += noise(posx * frequency, posy * frequency, posz * frequency)
-                * amplitude;
+                  * amplitude;
+
+            maxValue += amplitude;
 
             amplitude *= persistence;
             frequency *= 2;
         }
 
-        return total;
+        return total / maxValue;
     }
 
     //---------------------------------------------------------------------
